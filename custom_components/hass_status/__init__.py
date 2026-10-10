@@ -34,6 +34,8 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
 
 async def async_unload_entry(hass: Any, entry: Any) -> bool:
     """Unload a board and stop its listeners."""
+    from .const import PLATFORMS
+
     entry.runtime_data.async_stop()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
