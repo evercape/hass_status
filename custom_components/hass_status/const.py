@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 DOMAIN = "hass_status"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 PLATFORMS: list[str] = ["binary_sensor", "sensor"]
 

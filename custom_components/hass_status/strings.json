@@ -20,6 +20,10 @@
   "config_subentries": {
     "check": {
       "title": "Check",
+      "initiate_flow": {
+        "user": "Add check",
+        "reconfigure": "Edit check"
+      },
       "step": {
         "user": {
           "title": "Add check",
@@ -136,6 +140,10 @@
     },
     "group": {
       "title": "Group",
+      "initiate_flow": {
+        "user": "Add group",
+        "reconfigure": "Edit group"
+      },
       "step": {
         "user": {
           "title": "Add group",
