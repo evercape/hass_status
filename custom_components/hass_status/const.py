@@ -5,12 +5,16 @@ from __future__ import annotations
 import re
 
 DOMAIN = "hass_status"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 PLATFORMS: list[str] = ["binary_sensor", "sensor"]
 
 SUBENTRY_CHECK = "check"
 SUBENTRY_GROUP = "group"
+SUBENTRY_CATEGORY = "category"
+
+NEW_CATEGORY = "__new__"
+NO_CATEGORY = "__none__"
 
 LOGIC_ALL = "all"
 LOGIC_ANY = "any"
@@ -52,6 +56,8 @@ CONF_DISPLAY_ENTITY = "display_entity"
 CONF_LOGIC = "logic"
 CONF_FORMULA = "formula"
 CONF_HOLD = "hold"
+CONF_HOLD_MINUTES = "hold_minutes"
+CONF_COLOR = "color"
 CONF_MESSAGE_OK = "message_ok"
 CONF_CONDITIONS = "conditions"
 CONF_MEMBERS = "members"
@@ -74,7 +80,38 @@ CONF_MESSAGE_UNAVAILABLE = "message_unavailable"
 
 DEFAULT_CHECK_ICON = "mdi:check-circle-outline"
 DEFAULT_GROUP_ICON = "mdi:format-list-checks"
+DEFAULT_CATEGORY_ICON = "mdi:label"
+DEFAULT_CATEGORY_COLOR = "blue"
 DEFAULT_BOARD_NAME = "Status"
+
+# Names accepted by the Home Assistant label registry color picker.
+CATEGORY_COLORS = (
+    "primary",
+    "accent",
+    "red",
+    "pink",
+    "purple",
+    "deep-purple",
+    "indigo",
+    "blue",
+    "light-blue",
+    "cyan",
+    "teal",
+    "green",
+    "light-green",
+    "lime",
+    "yellow",
+    "amber",
+    "orange",
+    "deep-orange",
+    "brown",
+    "grey",
+    "light-grey",
+    "dark-grey",
+    "blue-grey",
+    "black",
+    "white",
+)
 
 MAX_CONDITIONS = 30
 MAX_ID_LENGTH = 48
@@ -86,6 +123,8 @@ UNAVAILABLE_STATES = frozenset({"unknown", "unavailable", ""})
 ATTR_OBJECT_ID = "object_id"
 ATTR_SEVERITY = "severity"
 ATTR_CATEGORY = "category"
+ATTR_CATEGORY_ICON = "category_icon"
+ATTR_CATEGORY_COLOR = "category_color"
 ATTR_REASON = "reason"
 ATTR_FOCUS_ENTITY = "focus_entity"
 ATTR_DISPLAY_ENTITY = "display_entity"

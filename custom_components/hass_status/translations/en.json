@@ -1,0 +1,336 @@
+{
+  "title": "Hass Status",
+  "config": {
+    "initiate_flow": {
+      "user": "Add board"
+    },
+    "step": {
+      "user": {
+        "title": "Status board",
+        "description": "A board holds checks for this Home Assistant installation. Entity ids, limits, and sentences stay on this installation.",
+        "data": {
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Enter a name"
+    },
+    "abort": {
+      "already_configured": "A board with this name already exists"
+    }
+  },
+  "config_subentries": {
+    "check": {
+      "title": "Check",
+      "initiate_flow": {
+        "user": "Add check",
+        "reconfigure": "Edit check"
+      },
+      "step": {
+        "user": {
+          "title": "Add check",
+          "description": "A check watches one or more entities and turns on when the verdict needs attention. All means every condition must pass. Any means one passing condition is enough. Formula uses condition ids with and, or, not, and parentheses. A condition id is true when that test passes.",
+          "data": {
+            "name": "Name",
+            "object_id": "Id",
+            "icon": "Icon",
+            "category": "Category",
+            "display_entity": "Value to show when OK",
+            "logic": "Logic",
+            "formula": "Formula",
+            "hold_minutes": "Hold",
+            "message_ok": "Sentence when OK"
+          },
+          "data_description": {
+            "object_id": "Lowercase id, starting with a letter. Used in formulas. Leave blank to build it from the name. It cannot be changed later.",
+            "category": "Pick a category, or create one with a name, icon, and color. You can edit it later.",
+            "display_entity": "The reading shown on a row while the check is OK. The live value is not copied into this check.",
+            "formula": "Condition ids with and, or, not, and parentheses. A condition id is true when that test passes. Example: pressure and leak",
+            "hold_minutes": "Minutes a new verdict must stay the same before it is published. 0 publishes immediately. The first reading after a restart is published immediately.",
+            "message_ok": "Leave blank for OK. Placeholders such as {value} are kept as text and filled in when a card or notification is rendered."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit check",
+          "description": "Id: {object_id}. The id stays the same so dashboards and formulas keep working.",
+          "data": {
+            "name": "[%key:component::hass_status::config_subentries::check::step::user::data::name%]",
+            "icon": "[%key:component::hass_status::config_subentries::check::step::user::data::icon%]",
+            "category": "[%key:component::hass_status::config_subentries::check::step::user::data::category%]",
+            "display_entity": "[%key:component::hass_status::config_subentries::check::step::user::data::display_entity%]",
+            "logic": "[%key:component::hass_status::config_subentries::check::step::user::data::logic%]",
+            "formula": "[%key:component::hass_status::config_subentries::check::step::user::data::formula%]",
+            "hold_minutes": "[%key:component::hass_status::config_subentries::check::step::user::data::hold_minutes%]",
+            "message_ok": "[%key:component::hass_status::config_subentries::check::step::user::data::message_ok%]"
+          },
+          "data_description": {
+            "category": "[%key:component::hass_status::config_subentries::check::step::user::data_description::category%]",
+            "display_entity": "[%key:component::hass_status::config_subentries::check::step::user::data_description::display_entity%]",
+            "formula": "[%key:component::hass_status::config_subentries::check::step::user::data_description::formula%]",
+            "hold_minutes": "[%key:component::hass_status::config_subentries::check::step::user::data_description::hold_minutes%]",
+            "message_ok": "[%key:component::hass_status::config_subentries::check::step::user::data_description::message_ok%]"
+          }
+        },
+        "new_category": {
+          "title": "New category",
+          "description": "A category is a label for this board. Set the name, icon, and color together. You can edit them later from Add category.",
+          "data": {
+            "name": "Name",
+            "object_id": "Id",
+            "icon": "Icon",
+            "color": "Color"
+          },
+          "data_description": {
+            "object_id": "Lowercase id. Leave blank to build it from the name. It cannot be changed later.",
+            "icon": "Shown with the category, the same way an area or label has an icon.",
+            "color": "Label color. Used in the category list and on the Home Assistant label."
+          }
+        },
+        "conditions": {
+          "title": "Conditions",
+          "description": "Add every test for this check, then save.",
+          "data": {
+            "action": "Next"
+          }
+        },
+        "condition": {
+          "title": "Condition",
+          "description": "The condition id is the name used in a formula. Range and state need an entity. Template does not.",
+          "data": {
+            "id": "Condition id",
+            "type": "Type",
+            "entity_id": "Entity",
+            "severity": "Severity when it fails",
+            "unavailable_severity": "Severity when it is not reporting",
+            "remove": "Delete this condition"
+          }
+        },
+        "condition_detail": {
+          "title": "Condition details",
+          "description": "Limits are inclusive. Equal to the minimum or maximum is OK. After a breach, the value must pass the limit by the hysteresis before the breach clears.",
+          "data": {
+            "minimum": "Minimum",
+            "maximum": "Maximum",
+            "hysteresis": "Hysteresis",
+            "comparator": "Comparison",
+            "expected_state": "Expected state",
+            "template": "Template",
+            "message_low": "Sentence when below minimum",
+            "message_high": "Sentence when above maximum",
+            "message_fail": "Sentence when the test fails",
+            "message_ok": "Sentence when this condition passes",
+            "message_unavailable": "Sentence when not reporting"
+          },
+          "data_description": {
+            "expected_state": "Matched exactly, for example on, off, home, or a sensor state.",
+            "template": "Rendered true means this condition passes. False means it failed. An error counts as not reporting.",
+            "message_low": "Optional. Placeholders such as {value}, {min}, {max}, {state}, and {expected} are stored as text, not filled with the live reading."
+          }
+        }
+      },
+      "error": {
+        "name_required": "Enter a name",
+        "invalid_object_id": "Use a lowercase id that starts with a letter and contains only letters, numbers, and underscores",
+        "keyword_id": "and, or, and not are reserved",
+        "already_configured": "That id is already used on this board",
+        "invalid_icon": "Pick an icon",
+        "invalid_logic": "Choose all, any, or formula",
+        "invalid_hold": "Enter a whole number of minutes, or 0",
+        "invalid_color": "Choose a color",
+        "flow_failed": "Could not open the next step. The details are in the Home Assistant log.",
+        "invalid_type": "Choose range, state, or template",
+        "entity_required": "Choose an entity",
+        "invalid_severity": "Choose attention or critical",
+        "duplicate_condition": "That condition id is already used on this check",
+        "range_required": "Enter a minimum, a maximum, or both",
+        "min_above_max": "Minimum is above maximum",
+        "invalid_hysteresis": "Hysteresis cannot be negative",
+        "invalid_number": "Enter a number",
+        "state_required": "Enter the expected state",
+        "invalid_comparator": "Choose a comparison",
+        "template_required": "Enter a template",
+        "template_invalid": "Template could not be parsed",
+        "need_condition": "Add at least one condition",
+        "too_many_conditions": "A check can have at most 30 conditions",
+        "formula_required": "Enter a formula, or choose all or any",
+        "invalid_formula": "Formula could not be parsed. Use condition ids with and, or, not, and parentheses",
+        "formula_unknown": "The formula names a condition that is not on this check: {detail}"
+      }
+    },
+    "group": {
+      "title": "Group",
+      "initiate_flow": {
+        "user": "Add group",
+        "reconfigure": "Edit group"
+      },
+      "step": {
+        "user": {
+          "title": "Add group",
+          "description": "A group turns on when any selected check needs attention. Create the checks first. Groups are not counted again in the open-issue total.",
+          "data": {
+            "name": "Name",
+            "object_id": "Id",
+            "icon": "Icon",
+            "category": "Category",
+            "members": "Checks"
+          },
+          "data_description": {
+            "object_id": "Lowercase id. Leave blank to build it from the name. It cannot be changed later.",
+            "members": "The group follows these checks. It does not read sensors itself.",
+            "category": "Pick a category, or create one with a name, icon, and color."
+          }
+        },
+        "new_category": {
+          "title": "[%key:component::hass_status::config_subentries::check::step::new_category::title%]",
+          "description": "[%key:component::hass_status::config_subentries::check::step::new_category::description%]",
+          "data": {
+            "name": "[%key:component::hass_status::config_subentries::check::step::new_category::data::name%]",
+            "object_id": "[%key:component::hass_status::config_subentries::check::step::new_category::data::object_id%]",
+            "icon": "[%key:component::hass_status::config_subentries::check::step::new_category::data::icon%]",
+            "color": "[%key:component::hass_status::config_subentries::check::step::new_category::data::color%]"
+          },
+          "data_description": {
+            "object_id": "[%key:component::hass_status::config_subentries::check::step::new_category::data_description::object_id%]",
+            "icon": "[%key:component::hass_status::config_subentries::check::step::new_category::data_description::icon%]",
+            "color": "[%key:component::hass_status::config_subentries::check::step::new_category::data_description::color%]"
+          }
+        },
+        "reconfigure": {
+          "title": "Edit group",
+          "description": "Id: {object_id}. The id stays the same.",
+          "data": {
+            "name": "[%key:component::hass_status::config_subentries::group::step::user::data::name%]",
+            "icon": "[%key:component::hass_status::config_subentries::group::step::user::data::icon%]",
+            "category": "[%key:component::hass_status::config_subentries::group::step::user::data::category%]",
+            "members": "[%key:component::hass_status::config_subentries::group::step::user::data::members%]"
+          },
+          "data_description": {
+            "members": "[%key:component::hass_status::config_subentries::group::step::user::data_description::members%]"
+          }
+        }
+      },
+      "error": {
+        "name_required": "[%key:component::hass_status::config_subentries::check::error::name_required%]",
+        "invalid_object_id": "[%key:component::hass_status::config_subentries::check::error::invalid_object_id%]",
+        "keyword_id": "[%key:component::hass_status::config_subentries::check::error::keyword_id%]",
+        "already_configured": "[%key:component::hass_status::config_subentries::check::error::already_configured%]",
+        "invalid_icon": "[%key:component::hass_status::config_subentries::check::error::invalid_icon%]",
+        "members_required": "Select at least one check",
+        "invalid_color": "[%key:component::hass_status::config_subentries::check::error::invalid_color%]"
+      },
+      "abort": {
+        "no_checks": "Add a check before creating a group"
+      }
+    },
+    "category": {
+      "title": "Category",
+      "initiate_flow": {
+        "user": "Add category",
+        "reconfigure": "Edit category"
+      },
+      "step": {
+        "user": {
+          "title": "Add category",
+          "description": "Categories work like labels. Set the name, icon, and color together, then pick this category on a check or group.",
+          "data": {
+            "name": "Name",
+            "object_id": "Id",
+            "icon": "Icon",
+            "color": "Color"
+          },
+          "data_description": {
+            "object_id": "Lowercase id. Leave blank to build it from the name. It cannot be changed later.",
+            "icon": "Shown with the category.",
+            "color": "Label color."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit category",
+          "description": "Id: {object_id}. The id stays the same. Checks that use this category keep working.",
+          "data": {
+            "name": "Name",
+            "icon": "Icon",
+            "color": "Color"
+          },
+          "data_description": {
+            "icon": "Shown with the category.",
+            "color": "Label color."
+          }
+        }
+      },
+      "error": {
+        "name_required": "[%key:component::hass_status::config_subentries::check::error::name_required%]",
+        "invalid_object_id": "[%key:component::hass_status::config_subentries::check::error::invalid_object_id%]",
+        "keyword_id": "[%key:component::hass_status::config_subentries::check::error::keyword_id%]",
+        "already_configured": "[%key:component::hass_status::config_subentries::check::error::already_configured%]",
+        "invalid_icon": "[%key:component::hass_status::config_subentries::check::error::invalid_icon%]",
+        "invalid_color": "[%key:component::hass_status::config_subentries::check::error::invalid_color%]"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "open_issues": {
+        "name": "Open issues"
+      }
+    }
+  },
+  "selector": {
+    "logic": {
+      "options": {
+        "all": "All conditions pass",
+        "any": "Any condition passes",
+        "formula": "Formula"
+      }
+    },
+    "condition_type": {
+      "options": {
+        "range": "Numeric range",
+        "state": "Expected state",
+        "template": "Template"
+      }
+    },
+    "severity": {
+      "options": {
+        "attention": "Attention",
+        "critical": "Critical"
+      }
+    },
+    "comparator": {
+      "options": {
+        "is": "Is",
+        "is_not": "Is not"
+      }
+    },
+    "category_color": {
+      "options": {
+        "primary": "Primary",
+        "accent": "Accent",
+        "red": "Red",
+        "pink": "Pink",
+        "purple": "Purple",
+        "deep-purple": "Deep purple",
+        "indigo": "Indigo",
+        "blue": "Blue",
+        "light-blue": "Light blue",
+        "cyan": "Cyan",
+        "teal": "Teal",
+        "green": "Green",
+        "light-green": "Light green",
+        "lime": "Lime",
+        "yellow": "Yellow",
+        "amber": "Amber",
+        "orange": "Orange",
+        "deep-orange": "Deep orange",
+        "brown": "Brown",
+        "grey": "Grey",
+        "light-grey": "Light grey",
+        "dark-grey": "Dark grey",
+        "blue-grey": "Blue grey",
+        "black": "Black",
+        "white": "White"
+      }
+    }
+  }
+}

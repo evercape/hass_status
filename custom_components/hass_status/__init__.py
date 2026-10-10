@@ -23,6 +23,7 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
 
     runtime = HassStatusRuntime(hass, entry)
     runtime.load()
+    runtime.async_sync_labels()
     runtime.async_start()
     entry.runtime_data = runtime
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))

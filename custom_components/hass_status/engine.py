@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 import logging
 import time
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
@@ -19,6 +20,7 @@ from homeassistant.helpers.template import Template
 
 from .const import (
     LISTENER_SUMMARY,
+    SUBENTRY_CATEGORY,
     SUBENTRY_CHECK,
     SUBENTRY_GROUP,
     listener_key_check,
@@ -39,7 +41,14 @@ from .evaluator import (
     evaluate_summary,
     interpret_truth,
 )
-from .models import CheckConfig, ConfigError, GroupConfig
+from .models import (
+    CategoryConfig,
+    CheckConfig,
+    ConfigError,
+    GroupConfig,
+    decorate_check,
+    decorate_group,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,8 +61,10 @@ class HassStatusRuntime:
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
         self.entry = entry
+        self.categories: dict[str, CategoryConfig] = {}
         self.checks: dict[str, CheckConfig] = {}
         self.groups: dict[str, GroupConfig] = {}
+        self.label_ids: dict[str, str] = {}
         self.verdicts: dict[str, Verdict] = {}
         self.group_verdicts: dict[str, GroupVerdict] = {}
         self.summary = SummaryVerdict(0, (), ())
@@ -65,12 +76,27 @@ class HassStatusRuntime:
         self._stopped = False
 
     def load(self) -> None:
-        """Read checks and groups from the config entry."""
+        """Read categories, checks, and groups from the config entry."""
+        categories: dict[str, CategoryConfig] = {}
         checks: dict[str, CheckConfig] = {}
         groups: dict[str, GroupConfig] = {}
         holds: dict[str, Hold] = {}
         for subentry in self.entry.subentries.values():
-            if subentry.subentry_type == SUBENTRY_CHECK:
+            if subentry.subentry_type == SUBENTRY_CATEGORY:
+                try:
+                    category = CategoryConfig.from_storage(
+                        subentry.data, _object_id(subentry.unique_id)
+                    )
+                except ConfigError as err:
+                    _LOGGER.error(
+                        "Skipping category %s on %s: %s",
+                        subentry.title,
+                        self.entry.title,
+                        err.detail or err.code,
+                    )
+                    continue
+                categories[category.object_id] = category
+            elif subentry.subentry_type == SUBENTRY_CHECK:
                 try:
                     check = CheckConfig.from_storage(subentry.data, _object_id(subentry.unique_id))
                 except ConfigError as err:
@@ -97,9 +123,121 @@ class HassStatusRuntime:
                     )
                     continue
                 groups[group.object_id] = group
-        self.checks = checks
-        self.groups = groups
+        self.categories = categories
+        self.checks = {
+            object_id: decorate_check(check, categories)
+            for object_id, check in checks.items()
+        }
+        self.groups = {
+            object_id: decorate_group(group, categories)
+            for object_id, group in groups.items()
+        }
         self._holds = holds
+
+    def async_sync_labels(self) -> None:
+        """Create or update a Home Assistant label for each category.
+
+        The config entry is not written here. Writing it would reload the board.
+        """
+        try:
+            from homeassistant.helpers import label_registry as lr
+
+            registry = lr.async_get(self.hass)
+        except Exception:
+            _LOGGER.debug("Label registry is not available", exc_info=True)
+            return
+        prefix = f"hass_status:{self.entry.entry_id}:"
+        owned: dict[str, Any] = {}
+        try:
+            listed = registry.async_list_labels()
+        except Exception:
+            _LOGGER.debug("Could not list labels", exc_info=True)
+            return
+        for label in listed:
+            description = getattr(label, "description", None) or ""
+            if description.startswith(prefix):
+                owned[description] = label
+        keep: set[str] = set()
+        label_ids: dict[str, str] = {}
+        for category in self.categories.values():
+            description = prefix + category.object_id
+            existing = owned.get(description)
+            try:
+                if existing is None:
+                    created = registry.async_create(
+                        category.name,
+                        color=category.color,
+                        icon=category.icon,
+                        description=description,
+                    )
+                    label_id = created.label_id
+                else:
+                    label_id = existing.label_id
+                    registry.async_update(
+                        label_id,
+                        name=category.name,
+                        color=category.color,
+                        icon=category.icon,
+                        description=description,
+                    )
+            except Exception:
+                if existing is not None:
+                    label_ids[category.object_id] = existing.label_id
+                    keep.add(description)
+                _LOGGER.warning(
+                    "Could not sync the %s category to a Home Assistant label",
+                    category.name,
+                    exc_info=True,
+                )
+                continue
+            label_ids[category.object_id] = label_id
+            keep.add(description)
+        for description, label in owned.items():
+            if description in keep:
+                continue
+            try:
+                registry.async_delete(label.label_id)
+            except Exception:
+                _LOGGER.warning(
+                    "Could not remove the old category label %s",
+                    description,
+                    exc_info=True,
+                )
+        self.label_ids = label_ids
+
+    def async_attach_category_label(self, entity_id: str, category_id: str | None) -> None:
+        """Put the category's label on an entity, and drop labels from old categories."""
+        if not entity_id:
+            return
+        try:
+            from homeassistant.helpers import entity_registry as er
+            from homeassistant.helpers import label_registry as lr
+
+            label_registry = lr.async_get(self.hass)
+            entity_registry = er.async_get(self.hass)
+        except Exception:
+            return
+        prefix = f"hass_status:{self.entry.entry_id}:"
+        try:
+            owned = {
+                label.label_id
+                for label in label_registry.async_list_labels()
+                if (getattr(label, "description", None) or "").startswith(prefix)
+            }
+        except Exception:
+            return
+        wanted = self.label_ids.get(category_id) if category_id else None
+        current_entry = entity_registry.async_get(entity_id)
+        if current_entry is None:
+            return
+        current = set(getattr(current_entry, "labels", None) or ())
+        updated = (current - owned) | ({wanted} if wanted else set())
+        if updated == current:
+            return
+        try:
+            entity_registry.async_update_entity(entity_id, labels=updated)
+        except Exception:
+            _LOGGER.debug("Could not label %s", entity_id, exc_info=True)
 
     @callback
     def async_start(self) -> None:

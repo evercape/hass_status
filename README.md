@@ -1,6 +1,6 @@
 # Hass Status
 
-Hass Status is a Home Assistant helper that turns sensor readings into a verdict: OK, attention, or critical. A check can test one entity or combine several. A group rolls those checks up into a category. One sensor counts how many checks are open.
+Hass Status is a Home Assistant integration that turns sensor readings into a verdict: OK, attention, or critical. A check can test one entity or combine several. Categories group those checks the way labels do, with a name, icon, and color. A group rolls checks up into one row. One sensor counts how many checks are open.
 
 The check entity stores the verdict, not the reading. A pH sensor that updates every 30 seconds already writes about a million states over two years of history. The check writes a new state only when the verdict changes. The live number stays on the original sensor. Cards and automations read it from there.
 
@@ -21,7 +21,9 @@ rm -rf /config/custom_components/hass_status
 mv hass_status-main/custom_components/hass_status /config/custom_components/hass_status
 ```
 
-Restart Home Assistant. Then go to **Settings → Devices & services → Add integration** and choose **Hass Status**.
+Restart Home Assistant. A browser refresh does not load the new files. Then go to **Settings → Devices & services → Integrations**, search for **Hass Status**, and add it.
+
+Updating is the same commands. Restart Home Assistant after replacing the folder.
 
 With HACS, add `https://github.com/evercape/hass_status` as a custom repository of type Integration, then download it.
 
@@ -29,10 +31,11 @@ With HACS, add `https://github.com/evercape/hass_status` as a custom repository 
 
 The integration creates a board. Give it a name, such as `Home`. You can add more than one board if you want separate counts.
 
-On the integration page, add subentries:
+On the integration page, the buttons are **Add check**, **Add group**, and **Add category**.
 
+- **Category** for a label: name, icon, and color, edited together
 - **Check** for a verdict
-- **Group** for a category row made of checks
+- **Group** for a row made of checks
 
 ## A single reading
 
@@ -42,7 +45,7 @@ Add a check:
 | --- | --- |
 | Name | Pool pH |
 | Id | `pool_ph` |
-| Category | Pool |
+| Category | New category, then name Pool, an icon, and a color |
 | Value to show when OK | your pH sensor |
 | Logic | All conditions pass |
 | Hold | empty, or a few minutes if the reading blips |

@@ -61,6 +61,8 @@ class Verdict:
     sources: tuple[str, ...]
     logic: str
     object_id: str
+    category_icon: str | None = None
+    category_color: str | None = None
 
     def snapshot(self) -> tuple[object, ...]:
         """Return the parts that should cause a new recorder row."""
@@ -77,6 +79,8 @@ class Verdict:
             self.sources,
             self.logic,
             self.object_id,
+            self.category_icon,
+            self.category_color,
         )
 
 
@@ -94,6 +98,8 @@ class GroupVerdict:
     message: str
     category: str | None
     object_id: str
+    category_icon: str | None = None
+    category_color: str | None = None
 
 
 @dataclass(frozen=True)
@@ -323,6 +329,8 @@ def _ok_verdict(check: CheckConfig) -> Verdict:
         sources=_sources(check),
         logic=check.logic,
         object_id=check.object_id,
+        category_icon=check.category_icon,
+        category_color=check.category_color,
     )
 
 
@@ -349,6 +357,8 @@ def _problem_verdict(
         sources=_sources(check),
         logic=check.logic,
         object_id=check.object_id,
+        category_icon=check.category_icon,
+        category_color=check.category_color,
     )
 
 
@@ -427,6 +437,8 @@ def evaluate_group(
             message="No checks selected",
             category=group.category,
             object_id=group.object_id,
+            category_icon=group.category_icon,
+            category_color=group.category_color,
         )
     open_ids: list[str] = []
     open_verdicts: list[tuple[str, Verdict]] = []
@@ -470,6 +482,8 @@ def evaluate_group(
             message=DEFAULT_MESSAGES[REASON_OK],
             category=group.category,
             object_id=group.object_id,
+            category_icon=group.category_icon,
+            category_color=group.category_color,
         )
     worst_id, worst = open_verdicts[0]
     worst_rank = SEVERITY_RANK.get(worst.severity, 0)
@@ -493,6 +507,8 @@ def evaluate_group(
         message=" · ".join(names),
         category=group.category,
         object_id=group.object_id,
+        category_icon=group.category_icon,
+        category_color=group.category_color,
     )
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from .const import (
@@ -13,7 +13,9 @@ from .const import (
     CONDITION_STATE,
     CONDITION_TEMPLATE,
     CONDITION_TYPES,
+    CATEGORY_COLORS,
     CONF_CATEGORY,
+    CONF_COLOR,
     CONF_COMPARATOR,
     CONF_CONDITION_ID,
     CONF_CONDITIONS,
@@ -39,6 +41,8 @@ from .const import (
     CONF_TEMPLATE,
     CONF_TYPE,
     CONF_UNAVAILABLE_SEVERITY,
+    DEFAULT_CATEGORY_COLOR,
+    DEFAULT_CATEGORY_ICON,
     DEFAULT_CHECK_ICON,
     DEFAULT_GROUP_ICON,
     FORMULA_KEYWORDS,
@@ -292,6 +296,9 @@ class CheckConfig:
     formula: str = ""
     hold_seconds: int = 0
     message_ok: str = ""
+    category_id: str | None = None
+    category_icon: str | None = None
+    category_color: str | None = None
 
     def to_storage(self) -> dict[str, Any]:
         """Serialize this check."""
@@ -386,6 +393,9 @@ class GroupConfig:
     members: tuple[str, ...]
     icon: str = DEFAULT_GROUP_ICON
     category: str | None = None
+    category_id: str | None = None
+    category_icon: str | None = None
+    category_color: str | None = None
 
     def to_storage(self) -> dict[str, Any]:
         """Serialize this group."""
@@ -425,3 +435,66 @@ class GroupConfig:
             icon=icon,
             category=category,
         )
+
+
+@dataclass(frozen=True)
+class CategoryConfig:
+    """A label for checks: name, icon, and color, edited together."""
+
+    object_id: str
+    name: str
+    icon: str = DEFAULT_CATEGORY_ICON
+    color: str = DEFAULT_CATEGORY_COLOR
+
+    def to_storage(self) -> dict[str, Any]:
+        """Serialize this category."""
+        return {
+            CONF_OBJECT_ID: self.object_id,
+            CONF_NAME: self.name,
+            CONF_ICON: self.icon,
+            CONF_COLOR: self.color,
+        }
+
+    @classmethod
+    def from_storage(cls, raw: Mapping[str, Any], object_id: str | None = None) -> CategoryConfig:
+        """Validate a stored category."""
+        resolved_id = _require_object_id(object_id or raw.get(CONF_OBJECT_ID))
+        name = _text(raw.get(CONF_NAME))
+        if not name:
+            raise ConfigError("name_required", CONF_NAME)
+        icon = _text(raw.get(CONF_ICON)) or DEFAULT_CATEGORY_ICON
+        if ":" not in icon:
+            raise ConfigError("invalid_icon", CONF_ICON)
+        color = _text(raw.get(CONF_COLOR)) or DEFAULT_CATEGORY_COLOR
+        if color not in CATEGORY_COLORS:
+            raise ConfigError("invalid_color", CONF_COLOR)
+        return cls(object_id=resolved_id, name=name, icon=icon, color=color)
+
+
+def decorate_check(
+    check: CheckConfig, categories: Mapping[str, CategoryConfig]
+) -> CheckConfig:
+    """Replace a category id with its name, icon, and color."""
+    return _decorate(check, categories)
+
+
+def decorate_group(
+    group: GroupConfig, categories: Mapping[str, CategoryConfig]
+) -> GroupConfig:
+    """Replace a category id with its name, icon, and color."""
+    return _decorate(group, categories)
+
+
+def _decorate(item: Any, categories: Mapping[str, CategoryConfig]) -> Any:
+    if not item.category:
+        return item
+    category = categories.get(item.category)
+    if category is None:
+        return item
+    return replace(
+        item,
+        category=category.name,
+        category_id=category.object_id,
+        category_icon=category.icon,
+        category_color=category.color,
+    )

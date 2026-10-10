@@ -21,9 +21,11 @@ from custom_components.hass_status.evaluator import (
 )
 from custom_components.hass_status.formula import FormulaError, compile_formula
 from custom_components.hass_status.models import (
+    CategoryConfig,
     CheckConfig,
     ConfigError,
     GroupConfig,
+    decorate_check,
     duration_to_seconds,
     seconds_to_duration,
 )
@@ -78,6 +80,32 @@ class ModelTests(unittest.TestCase):
     def test_duration_round_trip(self) -> None:
         self.assertEqual(duration_to_seconds({"minutes": 5}), 300)
         self.assertEqual(seconds_to_duration(90), {"minutes": 1, "seconds": 30})
+
+    def test_category_round_trip_and_color(self) -> None:
+        category = CategoryConfig.from_storage(
+            {"name": "Water", "icon": "mdi:water", "color": "blue"},
+            "water",
+        )
+        self.assertEqual(CategoryConfig.from_storage(category.to_storage()), category)
+        with self.assertRaises(ConfigError) as raised:
+            CategoryConfig.from_storage(
+                {"name": "Water", "icon": "mdi:water", "color": "nope"},
+                "water",
+            )
+        self.assertEqual(raised.exception.code, "invalid_color")
+
+    def test_decorate_check_uses_category_name(self) -> None:
+        check = _range_check(category="water")
+        decorated = decorate_check(
+            check,
+            {"water": CategoryConfig("water", "Water", "mdi:water", "blue")},
+        )
+        self.assertEqual(decorated.category, "Water")
+        self.assertEqual(decorated.category_id, "water")
+        self.assertEqual(decorated.category_icon, "mdi:water")
+        self.assertEqual(decorated.category_color, "blue")
+        self.assertEqual(check.category, "water")
+        self.assertIsNone(decorate_check(check, {}).category_icon)
 
     def test_rejects_bad_range_and_keywords(self) -> None:
         with self.assertRaises(ConfigError) as raised:

@@ -14,6 +14,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     ATTR_ACTIVE_CONDITION,
     ATTR_CATEGORY,
+    ATTR_CATEGORY_COLOR,
+    ATTR_CATEGORY_ICON,
     ATTR_DISPLAY_ENTITY,
     ATTR_FAILED_CONDITIONS,
     ATTR_FOCUS_ENTITY,
@@ -68,6 +70,10 @@ def _check_attributes(verdict: Verdict) -> dict[str, Any]:
     }
     if verdict.category:
         attributes[ATTR_CATEGORY] = verdict.category
+    if verdict.category_icon:
+        attributes[ATTR_CATEGORY_ICON] = verdict.category_icon
+    if verdict.category_color:
+        attributes[ATTR_CATEGORY_COLOR] = verdict.category_color
     return attributes
 
 
@@ -84,6 +90,10 @@ def _group_attributes(verdict: GroupVerdict) -> dict[str, Any]:
     }
     if verdict.category:
         attributes[ATTR_CATEGORY] = verdict.category
+    if verdict.category_icon:
+        attributes[ATTR_CATEGORY_ICON] = verdict.category_icon
+    if verdict.category_color:
+        attributes[ATTR_CATEGORY_COLOR] = verdict.category_color
     return attributes
 
 
@@ -96,9 +106,15 @@ class CheckBinarySensor(HassStatusEntity, BinarySensorEntity):
         """Create the sensor for a check."""
         super().__init__(runtime, listener_key_check(check.object_id))
         self._object_id = check.object_id
+        self._category_id = check.category_id
         self._attr_unique_id = unique_id_check(runtime.entry.entry_id, check.object_id)
         self._attr_name = check.name
         self._attr_icon = check.icon
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe, then attach the category label."""
+        await super().async_added_to_hass()
+        self._runtime.async_attach_category_label(self.entity_id, self._category_id)
 
     @property
     def is_on(self) -> bool | None:
@@ -126,9 +142,15 @@ class GroupBinarySensor(HassStatusEntity, BinarySensorEntity):
         """Create the sensor for a group."""
         super().__init__(runtime, listener_key_group(group.object_id))
         self._object_id = group.object_id
+        self._category_id = group.category_id
         self._attr_unique_id = unique_id_group(runtime.entry.entry_id, group.object_id)
         self._attr_name = group.name
         self._attr_icon = group.icon
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe, then attach the category label."""
+        await super().async_added_to_hass()
+        self._runtime.async_attach_category_label(self.entity_id, self._category_id)
 
     @property
     def is_on(self) -> bool | None:

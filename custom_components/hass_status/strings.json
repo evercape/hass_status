@@ -1,6 +1,9 @@
 {
   "title": "Hass Status",
   "config": {
+    "initiate_flow": {
+      "user": "Add board"
+    },
     "step": {
       "user": {
         "title": "Status board",
@@ -36,15 +39,15 @@
             "display_entity": "Value to show when OK",
             "logic": "Logic",
             "formula": "Formula",
-            "hold": "Hold",
+            "hold_minutes": "Hold",
             "message_ok": "Sentence when OK"
           },
           "data_description": {
             "object_id": "Lowercase id, starting with a letter. Used in formulas. Leave blank to build it from the name. It cannot be changed later.",
-            "category": "Free text, such as Water or Security. Used to group counts.",
+            "category": "Pick a category, or create one with a name, icon, and color. You can edit it later.",
             "display_entity": "The reading shown on a row while the check is OK. The live value is not copied into this check.",
             "formula": "Condition ids with and, or, not, and parentheses. A condition id is true when that test passes. Example: pressure and leak",
-            "hold": "How long a new verdict must last before it is published. Empty publishes immediately. The first reading after a restart is published immediately.",
+            "hold_minutes": "Minutes a new verdict must stay the same before it is published. 0 publishes immediately. The first reading after a restart is published immediately.",
             "message_ok": "Leave blank for OK. Placeholders such as {value} are kept as text and filled in when a card or notification is rendered."
           }
         },
@@ -58,15 +61,30 @@
             "display_entity": "[%key:component::hass_status::config_subentries::check::step::user::data::display_entity%]",
             "logic": "[%key:component::hass_status::config_subentries::check::step::user::data::logic%]",
             "formula": "[%key:component::hass_status::config_subentries::check::step::user::data::formula%]",
-            "hold": "[%key:component::hass_status::config_subentries::check::step::user::data::hold%]",
+            "hold_minutes": "[%key:component::hass_status::config_subentries::check::step::user::data::hold_minutes%]",
             "message_ok": "[%key:component::hass_status::config_subentries::check::step::user::data::message_ok%]"
           },
           "data_description": {
             "category": "[%key:component::hass_status::config_subentries::check::step::user::data_description::category%]",
             "display_entity": "[%key:component::hass_status::config_subentries::check::step::user::data_description::display_entity%]",
             "formula": "[%key:component::hass_status::config_subentries::check::step::user::data_description::formula%]",
-            "hold": "[%key:component::hass_status::config_subentries::check::step::user::data_description::hold%]",
+            "hold_minutes": "[%key:component::hass_status::config_subentries::check::step::user::data_description::hold_minutes%]",
             "message_ok": "[%key:component::hass_status::config_subentries::check::step::user::data_description::message_ok%]"
+          }
+        },
+        "new_category": {
+          "title": "New category",
+          "description": "A category is a label for this board. Set the name, icon, and color together. You can edit them later from Add category.",
+          "data": {
+            "name": "Name",
+            "object_id": "Id",
+            "icon": "Icon",
+            "color": "Color"
+          },
+          "data_description": {
+            "object_id": "Lowercase id. Leave blank to build it from the name. It cannot be changed later.",
+            "icon": "Shown with the category, the same way an area or label has an icon.",
+            "color": "Label color. Used in the category list and on the Home Assistant label."
           }
         },
         "conditions": {
@@ -118,7 +136,9 @@
         "already_configured": "That id is already used on this board",
         "invalid_icon": "Pick an icon",
         "invalid_logic": "Choose all, any, or formula",
-        "invalid_hold": "Enter a valid duration",
+        "invalid_hold": "Enter a whole number of minutes, or 0",
+        "invalid_color": "Choose a color",
+        "flow_failed": "Could not open the next step. The details are in the Home Assistant log.",
         "invalid_type": "Choose range, state, or template",
         "entity_required": "Choose an entity",
         "invalid_severity": "Choose attention or critical",
@@ -157,7 +177,23 @@
           },
           "data_description": {
             "object_id": "Lowercase id. Leave blank to build it from the name. It cannot be changed later.",
-            "members": "The group follows these checks. It does not read sensors itself."
+            "members": "The group follows these checks. It does not read sensors itself.",
+            "category": "Pick a category, or create one with a name, icon, and color."
+          }
+        },
+        "new_category": {
+          "title": "[%key:component::hass_status::config_subentries::check::step::new_category::title%]",
+          "description": "[%key:component::hass_status::config_subentries::check::step::new_category::description%]",
+          "data": {
+            "name": "[%key:component::hass_status::config_subentries::check::step::new_category::data::name%]",
+            "object_id": "[%key:component::hass_status::config_subentries::check::step::new_category::data::object_id%]",
+            "icon": "[%key:component::hass_status::config_subentries::check::step::new_category::data::icon%]",
+            "color": "[%key:component::hass_status::config_subentries::check::step::new_category::data::color%]"
+          },
+          "data_description": {
+            "object_id": "[%key:component::hass_status::config_subentries::check::step::new_category::data_description::object_id%]",
+            "icon": "[%key:component::hass_status::config_subentries::check::step::new_category::data_description::icon%]",
+            "color": "[%key:component::hass_status::config_subentries::check::step::new_category::data_description::color%]"
           }
         },
         "reconfigure": {
@@ -180,10 +216,56 @@
         "keyword_id": "[%key:component::hass_status::config_subentries::check::error::keyword_id%]",
         "already_configured": "[%key:component::hass_status::config_subentries::check::error::already_configured%]",
         "invalid_icon": "[%key:component::hass_status::config_subentries::check::error::invalid_icon%]",
-        "members_required": "Select at least one check"
+        "members_required": "Select at least one check",
+        "invalid_color": "[%key:component::hass_status::config_subentries::check::error::invalid_color%]"
       },
       "abort": {
         "no_checks": "Add a check before creating a group"
+      }
+    },
+    "category": {
+      "title": "Category",
+      "initiate_flow": {
+        "user": "Add category",
+        "reconfigure": "Edit category"
+      },
+      "step": {
+        "user": {
+          "title": "Add category",
+          "description": "Categories work like labels. Set the name, icon, and color together, then pick this category on a check or group.",
+          "data": {
+            "name": "Name",
+            "object_id": "Id",
+            "icon": "Icon",
+            "color": "Color"
+          },
+          "data_description": {
+            "object_id": "Lowercase id. Leave blank to build it from the name. It cannot be changed later.",
+            "icon": "Shown with the category.",
+            "color": "Label color."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit category",
+          "description": "Id: {object_id}. The id stays the same. Checks that use this category keep working.",
+          "data": {
+            "name": "Name",
+            "icon": "Icon",
+            "color": "Color"
+          },
+          "data_description": {
+            "icon": "Shown with the category.",
+            "color": "Label color."
+          }
+        }
+      },
+      "error": {
+        "name_required": "[%key:component::hass_status::config_subentries::check::error::name_required%]",
+        "invalid_object_id": "[%key:component::hass_status::config_subentries::check::error::invalid_object_id%]",
+        "keyword_id": "[%key:component::hass_status::config_subentries::check::error::keyword_id%]",
+        "already_configured": "[%key:component::hass_status::config_subentries::check::error::already_configured%]",
+        "invalid_icon": "[%key:component::hass_status::config_subentries::check::error::invalid_icon%]",
+        "invalid_color": "[%key:component::hass_status::config_subentries::check::error::invalid_color%]"
       }
     }
   },
@@ -219,6 +301,35 @@
       "options": {
         "is": "Is",
         "is_not": "Is not"
+      }
+    },
+    "category_color": {
+      "options": {
+        "primary": "Primary",
+        "accent": "Accent",
+        "red": "Red",
+        "pink": "Pink",
+        "purple": "Purple",
+        "deep-purple": "Deep purple",
+        "indigo": "Indigo",
+        "blue": "Blue",
+        "light-blue": "Light blue",
+        "cyan": "Cyan",
+        "teal": "Teal",
+        "green": "Green",
+        "light-green": "Light green",
+        "lime": "Lime",
+        "yellow": "Yellow",
+        "amber": "Amber",
+        "orange": "Orange",
+        "deep-orange": "Deep orange",
+        "brown": "Brown",
+        "grey": "Grey",
+        "light-grey": "Light grey",
+        "dark-grey": "Dark grey",
+        "blue-grey": "Blue grey",
+        "black": "Black",
+        "white": "White"
       }
     }
   }
